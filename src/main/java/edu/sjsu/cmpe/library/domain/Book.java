@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Book {
     private int isbn;
-    @NotNull private String title;
+    @NotNull(message="Please Enter a valid title") private String title;
     private String language;
     @JsonProperty ("num-pages")
     private int pages;
@@ -18,16 +18,16 @@ public class Book {
     @NotEmpty(message="Please Enter a valid publication date") private String date;
     public String status="available";
     static int rc=1;
-
     
     public ArrayList<Author> authors=new ArrayList<Author>();
     public ArrayList<Review> reviews=new ArrayList<Review>();
+    
     
     public int getIsbn() {
 	return isbn;
     }
 
-    @NotNull public void setIsbn(int i) {
+    public void setIsbn(int i) {
 	isbn = i;
     }
 
@@ -35,7 +35,7 @@ public class Book {
 	return title;
     }
 
-    public void setTitle(@NotNull String title) {
+    public void setTitle(String title) {
 	this.title = title;
     }
     

@@ -1,6 +1,7 @@
 package edu.sjsu.cmpe.library.api.resources;
 
 
+import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -23,9 +24,15 @@ import javax.ws.rs.core.Response;
 
 
 
+
+
+
 import java.util.ArrayList;
 //import java.util.Enumeration;
 import java.util.HashMap;
+
+
+
 
 
 
@@ -48,13 +55,14 @@ import edu.sjsu.cmpe.library.dto.LinksDto;
 import edu.sjsu.cmpe.library.dto.ReviewDto;
 
 
+@SuppressWarnings("unused")
 @Path("/v1/books")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 
 public class BookResource {
 
-	static int i=1,r=0,k=0; 
+	static int i=1,r=0,rvc=1; 
     private static HashMap<Integer,Book> map=new HashMap<Integer,Book>();
 
     public BookResource() {
@@ -82,7 +90,7 @@ public class BookResource {
     @Timed(name = "create-book")
   
     
-    public Response createBook(Book book) {
+    public Response createBook(@Valid Book book) {
 
 
     book.setIsbn(i);
@@ -93,7 +101,7 @@ public class BookResource {
 	LinksDto bookResponse = new LinksDto();
 	
 	bookResponse.addLink(new LinkDto("view-book", "/books/" + book.getIsbn(), "GET"));
-	bookResponse.addLink(new LinkDto("insert-book","/books/" + book.getIsbn(), "POST"));
+	bookResponse.addLink(new LinkDto("create-book","/books/" + book.getIsbn(), "POST"));
 	bookResponse.addLink(new LinkDto("update-book","/books/" + book.getIsbn(), "PUT"));
 	bookResponse.addLink(new LinkDto("delete-book","/books/" + book.getIsbn(), "DELETE"));
 	return Response.status(201).entity(bookResponse).build();
@@ -122,24 +130,26 @@ public class BookResource {
         try{
 	
 	    	Book book = map.get(isbn);
-	    	if(!status.equalsIgnoreCase("available")||!status.equalsIgnoreCase("checked-out")||!status.equalsIgnoreCase("lost")||!status.equalsIgnoreCase("in-queue"))
+	    	if(status.equalsIgnoreCase("available")||status.equalsIgnoreCase("checked-out")||status.equalsIgnoreCase("lost")||status.equalsIgnoreCase("in-queue"))
 	    	{
-	    		throw new Exception("Wrong status");
-	    	}
+	    		book.setStatus(status);
+		    	
+		    	LinksDto bookResponse = new LinksDto();
+		    	
+		    	bookResponse.addLink(new LinkDto("view-book", "/books/" , "GET"));
+		    	bookResponse.addLink(new LinkDto("create-book","/books/", "POST"));
+		    	bookResponse.addLink(new LinkDto("update-book","/books/", "PUT"));
+		    	bookResponse.addLink(new LinkDto("delete-book","/books/", "DELETE"));
+		    	if(book.reviews.size()>0)
+		    		bookResponse.addLink(new LinkDto("view-all-reviews","/books/" + isbn + "/reviews", "GET"));
+		
+		    	return Response.status(200).entity(bookResponse).build();
 	    		
-	    	book.setStatus(status);
+	    	}
+	    	else
+	    		throw new Exception("Wrong status");
 	    	
-	    	LinksDto bookResponse = new LinksDto();
-	    	
-	    	bookResponse.addLink(new LinkDto("view-book", "/books/" , "GET"));
-	    	bookResponse.addLink(new LinkDto("create-book","/books/", "POST"));
-	    	bookResponse.addLink(new LinkDto("update-book","/books/", "PUT"));
-	    	bookResponse.addLink(new LinkDto("delete-book","/books/", "DELETE"));
-	    	if(book.reviews.size()>0)
-	    		bookResponse.addLink(new LinkDto("view-all-reviews","/books/" + isbn + "/reviews", "GET"));
-	
-	    	return Response.status(200).entity(bookResponse).build();
-	        }
+        }
         catch(Exception ex){
         	
 			return Response.ok("Check the status of book").build();
@@ -153,15 +163,18 @@ public class BookResource {
     @Timed(name = "create-review")
   
     
-    public Response createReview(@PathParam("isbn") int isbn,Review review) {
+    public Response createReview(@PathParam("isbn") int isbn,@Valid Review review) {
     	
     	Book book = map.get(isbn);
     	ArrayList<Review> reviews=book.addReview(review);
     	book.setReview(reviews);
     	map.put(isbn,book);
     	LinksDto lk=new LinksDto();
-    	lk.addLink(new LinkDto("view-review","/books/"+book.getIsbn()+"/reviews/"+book.reviews.size(),"GET"));
+    	lk.addLink(new LinkDto("view-review","/books/"+book.getIsbn()+"/reviews/"+rvc,"GET"));
+    	rvc++;
     	return Response.status(201).entity(lk).build();
+    	
+
     }
     
     
@@ -171,19 +184,17 @@ public class BookResource {
 		try{
 	    	Book book=	map.get(isbn);
 
-	    	Review rv=new Review();
-	    	
-	    	int k;
-	    		for(k=1;k<=book.reviews.size();k++)
+	    	Review rv=new Review();   	
+	    		for(int k=1;k<=book.reviews.size();k++)
 	    		{
 	    			if(k==id)
 	    			{
 	    			rv= book.reviews.get(id-1);
 	    			}
 	    		}
-	    		ReviewDto reviewResponse=new ReviewDto(rv);
-		    	reviewResponse.addLink(new LinkDto("view-review", "/books/"+book.getIsbn()+"/reviews/"+rv.getId(),"GET"));
-		    	return Response.status(200).entity(reviewResponse).build();
+	    		LinksDto reviewResponse=new LinksDto();
+		    	reviewResponse.addLink(new LinkDto("view-review", "/books/"+book.getIsbn()+"/reviews/"+id,"GET"));
+		    	return Response.status(200).entity(rv).build();
 	    	    	
 		}
 		catch(Exception ex){
@@ -221,7 +232,7 @@ public class BookResource {
 
 		Author as=new Author();
 		int k;
-		
+		System.out.println(book.authors.size());
 			for(k=1;k<=book.authors.size();k++)
 			{
 				if(k==id)
@@ -229,9 +240,10 @@ public class BookResource {
 				as= book.authors.get(id-1);
 				}
 			}
-			AuthorDto authorResponse=new AuthorDto(as);
+			
+			LinksDto authorResponse=new LinksDto();
 	    	authorResponse.addLink(new LinkDto("view-author", "/books/" + book.getIsbn()+"/authors/"+id,"GET"));
-	    	return Response.status(200).entity(authorResponse).build();
+	    	return Response.status(200).entity(as).build();
     	
     }
     

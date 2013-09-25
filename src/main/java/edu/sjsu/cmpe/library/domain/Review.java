@@ -1,8 +1,11 @@
 package edu.sjsu.cmpe.library.domain;
 
+import javax.validation.constraints.NotNull;
+
 public class Review {
-	
+	@NotNull (message="Enter a valid rating")
 	private int rating;
+	@NotNull(message="Enter a valid Comment")
 	private String comment;
 	private int id;
 	public Review(){

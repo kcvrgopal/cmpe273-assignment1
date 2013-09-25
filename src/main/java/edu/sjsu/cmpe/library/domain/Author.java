@@ -1,21 +1,30 @@
 package edu.sjsu.cmpe.library.domain;
 
+import org.hibernate.validator.constraints.NotEmpty;
+
 public class Author {
-	private int Id=1;
-    private String name;
+	static int i=1;
+	private int Id;
+    @NotEmpty (message="Enter a valid Author name")
+	private String name;
     
     
-    public Author(){
+    public Author(){       
+    	
+    	authId(i);
+    	i++;
     }
+   
     
     public int getId()
     {
     	return Id;
+    	
     }
     
-    public void setId(int ac)
+    public void authId(int i)
     {
-    	this.Id=Id++;
+    	this.Id=i;
     }
     
     public String getName() {
@@ -25,6 +34,5 @@ public class Author {
     public void setName(String name) {
 	this.name=name;
     }
-    
 
 }
